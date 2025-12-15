@@ -3018,16 +3018,24 @@ where A and B are participant numbers (in the range 1-N).
 @itemx -afterTourney string
 @cindex afterGame, option
 @cindex afterTourney, option
-When non-empty, the given string will be executed as a system command 
+When non-empty, the given string will be executed as a system command
 after each tournament game, or after the tourney completes, respectively.
 This can be used, for example, to autmatically run a cross-table generator
 on the PGN file where games are saved, to update the tourney standings.
 Default: ""
+@item -broadcastUrl string
+@itemx -broadcastToken string
+When @code{-broadcastUrl} is set, XBoard will POST the PGN of every game
+it finishes in tournament mode to the provided URL. The content type is
+@code{application/x-chess-pgn} and the optional @code{-broadcastToken}
+value will be used as a bearer token in an Authorization header so the
+feed can be relayed to protected web viewers running on a VPS. Defaults:
+empty strings.
 @item -syncAfterRound true/false
 @itemx -syncAfterCycle true/false
 @cindex syncAfterRound, option
 @cindex syncAfterCycle, option
-Controls whether different instances of XBoard concurrently running the 
+Controls whether different instances of XBoard concurrently running the
 same tournament will wait for each other.
 Defaults: sync after cycle, but not after round.
 @item -seedBase number

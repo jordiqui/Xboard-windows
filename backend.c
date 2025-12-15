@@ -223,6 +223,8 @@ void CopyPlayerNameIntoFileName P((char **, char *));
 char *SavePart P((char *));
 int SaveGameOldStyle P((FILE *));
 int SaveGamePGN P((FILE *));
+static void SaveGamePGN2 P((FILE *));
+static int BroadcastPgnToUrl P((void));
 int CheckFlags P((void));
 long NextTickLength P((long));
 void CheckTimeControl P((void));
@@ -11750,11 +11752,11 @@ GameEnds (ChessMove result, char *resultDetails, int whosays)
             /* would otherwise lose us the PGN.                       */
             /* [HGM] crash: not needed anymore, but doesn't hurt;     */
             /* output during GameEnds should never be fatal anymore   */
-	    if (gameMode == MachinePlaysWhite ||
-		gameMode == MachinePlaysBlack ||
-		gameMode == TwoMachinesPlay ||
-		gameMode == IcsPlayingWhite ||
-		gameMode == IcsPlayingBlack ||
+            if (gameMode == MachinePlaysWhite ||
+                gameMode == MachinePlaysBlack ||
+                gameMode == TwoMachinesPlay ||
+                gameMode == IcsPlayingWhite ||
+                gameMode == IcsPlayingBlack ||
 		gameMode == BeginningOfGame) {
 		char buf[MSG_SIZ];
 		snprintf(buf, MSG_SIZ, "result %s {%s}\n", PGNResult(result),
@@ -11763,16 +11765,22 @@ GameEnds (ChessMove result, char *resultDetails, int whosays)
 		    SendToProgram(buf, &first);
 		}
 		if (second.pr != NoProc &&
-		    gameMode == TwoMachinesPlay) {
-		    SendToProgram(buf, &second);
-		}
-	    }
-	}
+                    gameMode == TwoMachinesPlay) {
+                    SendToProgram(buf, &second);
+                }
+            }
+        }
 
-	if (appData.icsActive) {
-	    if (appData.quietPlay &&
-		(gameMode == IcsPlayingWhite ||
-		 gameMode == IcsPlayingBlack)) {
+        if (matchMode && appData.tourneyFile[0] && appData.broadcastUrl && appData.broadcastUrl[0]) {
+            if (!BroadcastPgnToUrl() && appData.debugMode) {
+                fprintf(debugFP, "Broadcast to %s failed\n", appData.broadcastUrl);
+            }
+        }
+
+        if (appData.icsActive) {
+            if (appData.quietPlay &&
+                (gameMode == IcsPlayingWhite ||
+                 gameMode == IcsPlayingBlack)) {
 		SendToICS(ics_prefix);
 		SendToICS("set shout 1\n");
 	    }
@@ -13775,6 +13783,44 @@ SavePart (char *str)
     strncpy(buf, str, p - str);
     buf[p - str] = NULLCHAR;
     return buf;
+}
+
+static int
+BroadcastPgnToUrl ()
+{
+    char command[4*MSG_SIZ];
+    char header[MSG_SIZ];
+    FILE *curlPipe;
+    int status;
+
+    if (appData.broadcastUrl == NULL || !appData.broadcastUrl[0]) return FALSE;
+
+    header[0] = NULLCHAR;
+    if (appData.broadcastToken && appData.broadcastToken[0]) {
+        snprintf(header, MSG_SIZ, " -H \"Authorization: Bearer %s\"", appData.broadcastToken);
+    }
+
+    snprintf(command, sizeof(command),
+             "curl -s -S -X POST -H \"Content-Type: application/x-chess-pgn\"%s --data-binary @- \"%s\" > /dev/null 2>&1",
+             header, appData.broadcastUrl);
+
+#ifdef WIN32
+    curlPipe = _popen(command, "w");
+#else
+    curlPipe = popen(command, "w");
+#endif
+    if (curlPipe == NULL) {
+        return FALSE;
+    }
+
+    SaveGamePGN2(curlPipe);
+    fflush(curlPipe);
+#ifdef WIN32
+    status = _pclose(curlPipe);
+#else
+    status = pclose(curlPipe);
+#endif
+    return status == 0;
 }
 
 #define PGN_MAX_LINE 75
