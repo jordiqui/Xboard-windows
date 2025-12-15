@@ -22,17 +22,21 @@ USE_DEBUG=0
 JAWS=0
 
 
-# set this to 1 unless you don't mind linking with cygwin1.dll
-USE_MINGW=1
+# Build with the MinGW-w64 toolchain for Windows 10/11
+USE_MINGW64 ?= 1
 
+# Optional prefix for cross-compiling (e.g. x86_64-w64-mingw32-)
+CROSS_PREFIX ?=
 
-# set up for cygwin or not
-ifeq ($(USE_MINGW),1)
-CFCYG = -mno-cygwin -DUSE_I64
-LFCYG = -mno-cygwin -lmsvcrt
+ifeq ($(USE_MINGW64),1)
+CC = $(CROSS_PREFIX)gcc
+WINDRES = $(CROSS_PREFIX)windres
+ARCH ?= -m64
+else
+CC = gcc
+WINDRES = windres
 endif
 
-CC = gcc
 FLEX = "flex.exe" # we need version 2.5.4 or later, cygwin's is 2.5.35
 #      "c:/mingw/mingw32/bin/flex.exe"
 HC="C:/Program Files/Help Workshop/hcrtf" -xn
@@ -41,7 +45,7 @@ ifeq ($(JAWS),1)
   DEFS += -DJAWS
 endif
 WARN = -Wall -Wno-char-subscripts -Wno-parentheses
-ARCH =
+ARCH ?=
 ifeq ($(USE_DEBUG),0)
   CFDEBUG = -DNDEBUG
   OPTS = -Os -frename-registers -funit-at-a-time -fstrict-aliasing -fstrength-reduce
@@ -49,8 +53,8 @@ else
   CFDEBUG = -D_DEBUG -DDEBUG -g
 endif
 CF = -c $(WARN) -pipe $(CFDEBUG) $(DEFS) -I. -I..
-CFLAGS = $(CF) $(ARCH) $(OPTS) $(CFCYG)
-LFLAGS = $(LFCYG) $(CFDEBUG) -fpic -s -mwindows -lwsock32 -lwinmm -lcomctl32
+CFLAGS = $(CF) $(ARCH) $(OPTS)
+LFLAGS = $(CFDEBUG) -fpic -s -mwindows -lwsock32 -lwinmm -lcomctl32
 
 all: $(PROJ).exe
 
@@ -68,7 +72,7 @@ $(PROJ).hlp : $(PROJ).rtf
 
 # Update the resource if necessary
 wbres.o: $(PROJ).rc $(PROJ).h resource.h config.h
-	windres $(DEFS) --use-temp-file --include-dir .. $< -O coff -o $@
+	$(WINDRES) $(DEFS) --use-temp-file --include-dir .. $< -O coff -o $@
 
 
 $(PROJ).exe: $(OBJS) $(PROJ).hlp
