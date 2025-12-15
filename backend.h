@@ -180,6 +180,7 @@ int  AnalyzeModeEvent P((void));
 void AnalyzeFileEvent P((void));
 void MatchEvent P((int mode));
 void RecentEngineEvent P((int nr));
+void CreateUciEngine P((const char *command, const char *dir));
 void TypeInEvent P((char first));
 void TypeInDoneEvent P((char *move));
 void InitPosition P((int redraw));
