@@ -27,18 +27,34 @@ What is WinBoard?
 WinBoard is a port of XBoard to run natively on Windows.  It is part
 of the XBoard project and is released under the same terms as XBoard.
 
-You can build WinBoard using the free Cygwin toolchain from
-www.cygnus.com with the following commands.
+You can build WinBoard using any of the following toolchains.
 
-	cd winboard
-	make -f makefile.gcc
+* **MinGW-w64 (recommended):** Works both on Windows through MSYS2 and
+  for cross-compiling from Linux. In an MSYS2 MinGW64 shell install the
+  toolchain and helper utilities, then build from the `winboard`
+  directory:
 
-You can build WinBoard using Microsoft Visual C with the following
-commands, or by opening the project in Visual Studio and clicking the
-build button.
+        pacman -S --needed base-devel mingw-w64-x86_64-{gcc,make,flex}
+        cd winboard
+        make -f makefile.gcc USE_MINGW64=1
 
-	cd winboard
-	nmake -f makefile.ms
+  If you are cross-compiling from a Linux host, install a MinGW-w64
+  cross toolchain (for example `x86_64-w64-mingw32-gcc`) and prepend the
+  appropriate prefix when invoking make:
+
+        cd winboard
+        make -f makefile.gcc USE_MINGW64=1 CROSS_PREFIX=x86_64-w64-mingw32-
+
+* **Cygwin (legacy):**
+
+        cd winboard
+        make -f makefile.gcc
+
+* **Microsoft Visual C:** Either run the commands below or open the
+  project in Visual Studio and click the build button.
+
+        cd winboard
+        nmake -f makefile.ms
 
 
 Reporting problems
