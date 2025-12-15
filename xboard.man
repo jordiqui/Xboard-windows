@@ -2957,6 +2957,17 @@ This can be used, for example, to autmatically run a cross-table generator
 on the PGN file where games are saved, to update the tourney standings.
 Default: ""
 .TP
+.B -broadcastUrl string
+.PD 0
+.TP
+.B -broadcastToken string
+.PD
+When set, XBoard will POST the PGN of every finished tournament game to
+the supplied URL using content type application/x-chess-pgn. The optional
+token is added as a bearer Authorization header, which is convenient when
+relaying the games to a protected web viewer running on a VPS. Defaults:
+empty strings.
+.TP
 .B -syncAfterRound true/false
 .PD 0
 .TP

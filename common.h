@@ -746,6 +746,8 @@ typedef struct {
 
     char *serverFileName;
     char *serverMovesName;
+    char *broadcastUrl;
+    char *broadcastToken;
     char *finger;
     Boolean suppressLoadMoves;
     int serverPause;
