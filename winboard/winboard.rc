@@ -27,7 +27,8 @@ LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 #endif //_WIN32
 
 // moved to "res" subdir to make testing easier-- don't want it in the root
-MANIFEST_RESOURCE_ID    24      MOVEABLE PURE   "res\\winboard.exe.manifest"
+// Use forward slashes so cross-builds with windres on Linux can locate the file
+MANIFEST_RESOURCE_ID    24      MOVEABLE PURE   "res/winboard.exe.manifest"
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -2292,7 +2293,7 @@ FILETYPE VFT_APP
 			 VALUE "FileVersion", PACKAGE_VERSION
 			 VALUE "FileDescription", "Winboard 32-bit GUI for chess"
 			 VALUE "InternalName", "Winboard"
-			 VALUE "LegalCopyright", "GPLv3 Copyright © 2009"
+			 VALUE "LegalCopyright", "GPLv3 Copyright Â© 2009"
 			 VALUE "OriginalFilename", "winboard.exe"
 			 VALUE "ProductName", "Winboard"
 			 VALUE "ProductVersion", PACKAGE_VERSION

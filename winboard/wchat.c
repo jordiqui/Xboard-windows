@@ -33,7 +33,7 @@
 #include <malloc.h>
 #include <commdlg.h>
 #include <dlgs.h>
-#include <Windowsx.h>
+#include <windowsx.h>
 
 #include "common.h"
 #include "frontend.h"
