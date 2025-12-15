@@ -257,6 +257,7 @@ static int
 MatchOK (int n)
 {
     ASSIGN(appData.participants, engineName);
+    if(appData.tourneyType < 0) appData.defaultMatchGames = 1;
     if(!CreateTourney(tfName) || matchMode) return matchMode || !appData.participants[0];
     PopDown(MasterDlg); // early popdown to prevent FreezeUI called through MatchEvent from causing XtGrab warning
     MatchEvent(2); // start tourney
@@ -297,7 +298,7 @@ static Option matchOptions[] = {
 { 0, SAME_ROW, 0, NULL, NULL, NULL, NULL, Break, "" }, // to decouple alignment above and below boxes
 //{ 0,  COMBO_CALLBACK | NO_GETTEXT,
 //		  0, NULL, (void*) &AddToTourney, (char*) (engineMnemonic+1), (engineMnemonic+1), ComboBox, N_("Select Engine:") },
-{ 0,  0,         10, NULL, (void*) &appData.tourneyType, "", NULL, Spin, N_("Tourney type (0 = round-robin, 1 = gauntlet):") },
+{ 0,  0,         10, NULL, (void*) &appData.tourneyType, "", NULL, Spin, N_("Tourney type (-1 = Swiss, 0 = round-robin, 1 = gauntlet):") },
 { 0,  1, 1000000000, NULL, (void*) &appData.tourneyCycles, "", NULL, Spin, N_("Number of tourney cycles (or Swiss rounds):") },
 { 0,  1, 1000000000, NULL, (void*) &appData.defaultMatchGames, "", NULL, Spin, N_("Default Number of Games in Match (or Pairing):") },
 { 0,  0, 1000000000, NULL, (void*) &appData.matchPause, "", NULL, Spin, N_("Pause between Match Games (msec):") },
@@ -338,6 +339,7 @@ PseudoOK ()
     if(matchMode) return;
     GenericReadout(matchOptions, -2); // read all, but suppress calling of MatchOK
     ASSIGN(appData.participants, engineName);
+    if(appData.tourneyType < 0) appData.defaultMatchGames = 1;
     ASSIGN(appData.tourneyFile, tfName);
     PopDown(MasterDlg); // early popdown to prevent FreezeUI called through MatchEvent from causing XtGrab warning
 }

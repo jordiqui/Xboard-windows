@@ -884,14 +884,14 @@ void ThemeOptionsPopup(HWND hwnd)
     GenericPopup(hwnd, themeOptions);
 }
 
-Boolean autoinc, twice, swiss;
+Boolean autoinc, twice;
 char *tfName;
 
 int MatchOK()
 {
     if(autoinc) appData.loadGameIndex = appData.loadPositionIndex = -(twice + 1); else
     if(!appData.loadGameFile[0]) appData.loadGameIndex = -2*twice; // kludge to pass value of "twice" for use in GUI book
-    if(swiss) { appData.defaultMatchGames = 1; appData.tourneyType = -1; }
+    if(appData.tourneyType < 0) appData.defaultMatchGames = 1;
     if(CreateTourney(tfName) && !matchMode) { // CreateTourney reloads original settings if file already existed
 	MatchEvent(2);
 	return 1; // close dialog
@@ -913,7 +913,7 @@ void PseudoOK(HWND hDlg)
 	if(appData.loadGameIndex < 0) appData.loadGameIndex = 0;
 	if(appData.loadPositionIndex < 0) appData.loadPositionIndex = 0;
     }
-    if(swiss) { appData.defaultMatchGames = 1; appData.tourneyType = -1; }
+    if(appData.tourneyType < 0) appData.defaultMatchGames = 1;
     ASSIGN(appData.tourneyFile, tfName);
 }
 
@@ -952,7 +952,7 @@ void Inspect(HWND hDlg)
 	ParseArgsFromFile(f);
 	autoinc = ((appData.loadPositionFile[0] ? appData.loadGameIndex : appData.loadPositionIndex) < 0);
 	twice = ((appData.loadPositionFile[0] ? appData.loadGameIndex : appData.loadPositionIndex) == -2);
-	swiss = appData.tourneyType < 0;
+        if(appData.tourneyType < 0) appData.defaultMatchGames = 1;
 	SetOptionValues(hDlg, NULL, activeList);
 	FREE(appData.saveGameFile); appData.saveGameFile = saveSaveFile;
     } else DisplayError(_("First you must specify an existing tourney file to clone"), 0);
@@ -968,8 +968,7 @@ Option tourneyOptions[] = {
   { 0,  0,          4, NULL, (void*) &tfName, "", NULL, FileName, N_("Tournament file:") },
   { 30, 0,          0, NULL, NULL, NULL, NULL, Label, N_("If you specify an existing file, the rest of this dialog will be ignored.") },
   { 30, 0,          0, NULL, NULL, NULL, NULL, Label, N_("Otherwise, the file will be created, with the settings you specify below:") },
-  { 0,  0,          0, NULL, (void*) &swiss, "", NULL, CheckBox, N_("Use Swiss pairing engine (cycles = rounds)") },
-  { 0,  0,         10, NULL, (void*) &appData.tourneyType, "", NULL, Spin, N_("Tourney type (0=RR, 1=gauntlet):") },
+  { 0,  0,         10, NULL, (void*) &appData.tourneyType, "", NULL, Spin, N_("Tourney type (-1=Swiss, 0=RR, 1=gauntlet):") },
   { 0,  0,          0, NULL, (void*) &appData.cycleSync, "", NULL, CheckBox, N_("Sync after cycle") },
   { 0,  1, 1000000000, NULL, (void*) &appData.tourneyCycles, "", NULL, Spin, N_("Number of tourney cycles:") },
   { 0,  0,          0, NULL, (void*) &appData.roundSync, "", NULL, CheckBox, N_("Sync after round") },
@@ -1021,7 +1020,8 @@ void TourneyPopup(HWND hwnd)
 {
     int n = NamesToList(firstChessProgramNames, engineList, engineMnemonic, "");
     autoinc = appData.loadGameIndex < 0 || appData.loadPositionIndex < 0;
-    twice = appData.loadGameIndex == -2 || appData.loadPositionIndex == -2; swiss = appData.tourneyType < 0;
+    twice = appData.loadGameIndex == -2 || appData.loadPositionIndex == -2;
+    tourneyOptions[5].min = -(appData.pairingEngine[0] != NULLCHAR);
     tourneyOptions[0].max = n;
     snprintf(title, MSG_SIZ, _("Tournament and Match Options"));
     ASSIGN(tfName, appData.tourneyFile[0] ? appData.tourneyFile : MakeName(appData.defName));
