@@ -38,6 +38,33 @@ You can build WinBoard using any of the following toolchains.
         cd winboard
         make -f makefile.gcc USE_MINGW64=1
 
+  **Pasos detallados en Windows (MSYS2 MinGW64):** si parte de un árbol
+  clonado en `C:\\tools\\msys64\\home\\Administrador\\Xboard-windows-master`,
+  puede seguir esta secuencia dentro de la terminal *MSYS2 MinGW64*:
+
+  1. Actualice los paquetes base y el toolchain recomendado:
+
+         pacman -Syu --noconfirm
+         pacman -S --needed --noconfirm base-devel mingw-w64-x86_64-{gcc,make,flex}
+
+  2. Cambie al directorio del proyecto y luego al subdirectorio de
+     WinBoard:
+
+         cd /c/tools/msys64/home/Administrador/Xboard-windows-master
+         cd winboard
+
+  3. Compile con el makefile para MinGW-w64 (use `-j` si desea paralelizar):
+
+         make -f makefile.gcc USE_MINGW64=1
+
+  4. (Opcional) Instale los binarios resultantes en el prefijo estándar
+     del entorno MinGW-w64:
+
+         make -f makefile.gcc USE_MINGW64=1 install
+
+  5. Ejecute `winboard.exe` desde `winboard/` o desde el destino de
+     instalación para verificar que la compilación fue exitosa.
+
   If you are cross-compiling from a Linux host, install a MinGW-w64
   cross toolchain (for example `x86_64-w64-mingw32-gcc`) and prepend the
   appropriate prefix when invoking make:
