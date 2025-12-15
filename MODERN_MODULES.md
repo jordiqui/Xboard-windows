@@ -6,6 +6,17 @@ Este documento resume módulos y librerías contemporáneas que podrían integra
 - **GTK 4**: migrar gradualmente la capa GTK existente para aprovechar mejoras en rendimiento y accesibilidad. Empezar por componentes aislados (p. ej. diálogos) y usar `libadwaita` para estilos coherentes.
 - **Soporte de temas SVG**: reutilizar la carpeta `svg/` con renderizado mediante `librsvg` para escalado nítido en pantallas HiDPI.
 
+### Plan de adopción de GTK 4
+- Crear un micro-módulo de compatibilidad (`gtk/gtk4_shims.c|h`) que envuelva las llamadas comunes usadas en `gtk/xboard.c` y `gtk/xoptions.c`; así, la migración puede hacerse por archivo sin romper el resto del front-end.
+- Comenzar por los diálogos modales (p. ej. los diálogos definidos en `gtk/xoptions.c`), portándolos a `AdwDialog`/`AdwAlertDialog` y validando que los accesos a señales y aceleradores sigan funcionando.
+- Incorporar `AdwApplication` y estilos de `libadwaita` con hojas de estilo mínimas (`gtk/resources/`) para mantener coherencia visual sin alterar el layout actual.
+- Añadir comprobaciones de disponibilidad en `configure` (p. ej. `PKG_CHECK_MODULES([GTK4], [gtk4 libadwaita-1])`) y exponer un flag `--enable-gtk4` que permita compilar en paralelo GTK 3 y GTK 4 hasta completar la transición.
+
+### Detalles para temas SVG
+- Mantener la carpeta `svg/` como fuente de los temas y cargarla mediante `librsvg` en un módulo dedicado (p. ej. `gtk/theme_svg.c`) que proporcione surfaces `GdkTexture` reescaladas.
+- Normalizar los tamaños de las piezas/temas en múltiplos de `scale` (`gtk_widget_get_scale_factor`) para que la representación en pantallas HiDPI sea nítida sin duplicar recursos PNG.
+- Exponer un selector de tema SVG en las preferencias avanzadas y fall back automático a bitmaps existentes cuando `librsvg` no esté disponible en el entorno.
+
 ## Audio y notificaciones
 - **SDL2 (audio)**: encapsular la reproducción de sonidos en un módulo pequeño usando `SDL_AudioDeviceID` para mejorar compatibilidad multiplataforma.
 - **libnotify**: en entornos compatibles, mostrar notificaciones de eventos (movidas, fin de partida) con un backend opcional.
