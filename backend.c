@@ -984,6 +984,27 @@ FloatToFront(char **list, char *engineLine)
 char *insert, *wbOptions; // point in ChessProgramNames were we should insert new engine
 
 void
+CreateUciEngine(const char *command, const char *dir)
+{   // helper to set up and load an engine as UCI through the existing dialog machinery
+    if(command == NULL) command = "";
+    if(dir == NULL || *dir == NULLCHAR) dir = ".";
+
+    isUCI = TRUE;      // ensure the adapter gets used
+    hasBook = TRUE;    // retain current defaults
+    storeVariant = v1 = FALSE;
+    addToList = TRUE;
+    useNick = FALSE;
+
+    ASSIGN(engineName, command);
+    ASSIGN(engineDir, dir);
+    ASSIGN(engineLine, "");
+    ASSIGN(nickName, "");
+    ASSIGN(params, "");
+
+    Load(&first, 0);
+}
+
+void
 Load (ChessProgramState *cps, int i)
 {
     char *p, *q, buf[MSG_SIZ], command[MSG_SIZ], buf2[MSG_SIZ], buf3[MSG_SIZ], jar;
