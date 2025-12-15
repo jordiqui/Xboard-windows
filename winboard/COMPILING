@@ -30,8 +30,23 @@ Compiling from the Command Line
         make -f makefile.gcc
 
         You can modify certain settings in the makefile such as JAWS support,
-        debugging support.  If using cygwin, you can select whether or not to
-        link with cygwin1.dll instead of the msvcrt runtime.
+        debugging support.
+
+        MinGW-w64 on Windows 10/11 (recommended)
+        --
+        1. Install MSYS2 from https://www.msys2.org/ and open the "MSYS2 MinGW x64"
+           terminal so that the MinGW-w64 toolchain is in PATH.
+        2. Install dependencies:
+               pacman -S --needed git mingw-w64-x86_64-toolchain make
+        3. Clone the repository from Windows:
+               git clone https://github.com/<usuario>/Xboard-windows.git
+               cd Xboard-windows/winboard
+        4. Build a 64-bit executable compatible with Windows 10/11:
+               mingw32-make -f makefile.gcc USE_MINGW64=1
+
+        If you are cross-compiling from Linux with a MinGW-w64 toolchain, set
+        CROSS_PREFIX=x86_64-w64-mingw32- when invoking make so that the
+        prefixed gcc and windres binaries are used.
 
 
     CL -- this includes MSVC and recent Intel compilers.
