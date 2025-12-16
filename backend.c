@@ -100,6 +100,7 @@
 # include <stdlib.h>
 # include <string.h>
 # include <stdarg.h>
+# include <unistd.h>
 #else /* not STDC_HEADERS */
 # if HAVE_STRING_H
 #  include <string.h>
@@ -107,6 +108,11 @@
 #  include <strings.h>
 # endif /* not HAVE_STRING_H */
 #endif /* not STDC_HEADERS */
+
+#ifdef __MINGW32__
+# define _popen popen
+# define _pclose pclose
+#endif
 
 #if HAVE_SYS_FCNTL_H
 # include <sys/fcntl.h>
@@ -1050,7 +1056,9 @@ Load (ChessProgramState *cps, int i)
     appData.protocolVersion[i] = v1 ? 1 : PROTOVER;
     appData.hasOwnBookUCI[i] = hasBook;
     if(!nickName[0]) useNick = FALSE;
-    if(useNick) ASSIGN(appData.pgnName[i], nickName);
+    if(useNick) {
+        ASSIGN(appData.pgnName[i], nickName);
+    }
     if(addToList) {
 	int len;
 	char quote;
@@ -1557,9 +1565,11 @@ ReserveGame (int gameNr, char resChar)
        (gameNr < 0 || nextGame / appData.defaultMatchGames != gameNr / appData.defaultMatchGames)) {
       int round = appData.defaultMatchGames * appData.tourneyType;
       if(gameNr < 0 || appData.tourneyType < 1 ||  // gauntlet engine can always stay loaded as first engine
-	 appData.tourneyType > 1 && nextGame/round != gameNr/round) // in multi-gauntlet change only after round
-	UnloadEngine(&first);  // next game belongs to other pairing;
-	UnloadEngine(&second); // already unload the engines, so TwoMachinesEvent will load new ones.
+         appData.tourneyType > 1 && nextGame/round != gameNr/round) // in multi-gauntlet change only after round
+      {
+        UnloadEngine(&first);  // next game belongs to other pairing;
+        UnloadEngine(&second); // already unload the engines, so TwoMachinesEvent will load new ones.
+      }
     }
     if(appData.debugMode) fprintf(debugFP, "Reserved, next=%d, nr=%d\n", nextGame, gameNr);
 }
@@ -4201,11 +4211,12 @@ read_from_ics (InputSourceRef isr, VOIDSTAR closure, char *data, int count, int 
 			int oldFMM = forwardMostMove;
 			gotPremove = 0;
 			ClearPremoveHighlights();
-			if (appData.debugMode)
-			  fprintf(debugFP, "Sending premove:\n");
-                          UserMoveEvent(premoveFromX, premoveFromY,
-				        premoveToX, premoveToY,
-                                        premovePromoChar);
+                        if (appData.debugMode) {
+                          fprintf(debugFP, "Sending premove:\n");
+                        }
+                        UserMoveEvent(premoveFromX, premoveFromY,
+                                      premoveToX, premoveToY,
+                                      premovePromoChar);
 			if(forwardMostMove == oldFMM) { // premove was rejected, highlight last opponent move
 			  if(moveList[oldFMM-1][1] != '@')
 			    SetHighlights(moveList[oldFMM-1][0]-AAA, moveList[oldFMM-1][1]-ONE,
@@ -5186,11 +5197,10 @@ SendMoveToProgram (int moveNum, ChessProgramState *cps)
 	  else SendToProgram("O-O-O\n", cps);
 	}
 	else SendToProgram(moveList[moveNum], cps);
-      } else
-      if(moveList[moveNum][4] == ';') { // [HGM] lion: move is double-step over intermediate square
-	char *m = moveList[moveNum];
-	static char c[2];
-	*c = m[7]; if(*c == '\n') *c = NULLCHAR; // promoChar
+      } else if(moveList[moveNum][4] == ';') { // [HGM] lion: move is double-step over intermediate square
+        char *m = moveList[moveNum];
+        static char c[2];
+        *c = m[7]; if(*c == '\n') *c = NULLCHAR; // promoChar
 	if((boards[moveNum][m[6]-ONE][m[5]-AAA] < BlackPawn) == (boards[moveNum][m[1]-ONE][m[0]-AAA] < BlackPawn)) // move is kludge to indicate castling
 	  snprintf(buf, MSG_SIZ, "%c%d%c%d,%c%d%c%d\n", m[0], m[1] - '0', // convert to two moves
 					       m[2], m[3] - '0',
@@ -5204,24 +5214,26 @@ SendMoveToProgram (int moveNum, ChessProgramState *cps)
 					       m[5], m[6] - '0',
 					       m[5], m[6] - '0',
 					       m[2], m[3] - '0', c);
-	} else
-	  snprintf(buf, MSG_SIZ, "%c%d%c%d,%c%d%c%d%s\n", m[0], m[1] - '0', // convert to two moves
-					       m[5], m[6] - '0',
-					       m[5], m[6] - '0',
-					       m[2], m[3] - '0', c);
-	  SendToProgram(buf, cps);
-      } else
-      if(BOARD_HEIGHT > 10) { // [HGM] big: convert ranks to double-digit where needed
-	if(moveList[moveNum][1] == '@' && (BOARD_HEIGHT < 16 || moveList[moveNum][0] <= 'Z')) { // drop move
-	  if(moveList[moveNum][0]== '@') snprintf(buf, MSG_SIZ, "@@@@\n"); else
-	  snprintf(buf, MSG_SIZ, "%c@%c%d%s", moveList[moveNum][0],
-					      moveList[moveNum][2], moveList[moveNum][3] - '0', moveList[moveNum]+4);
-	} else
-	  snprintf(buf, MSG_SIZ, "%c%d%c%d%s", moveList[moveNum][0], moveList[moveNum][1] - '0',
-					       moveList[moveNum][2], moveList[moveNum][3] - '0', moveList[moveNum]+4);
-	SendToProgram(buf, cps);
+        } else {
+          snprintf(buf, MSG_SIZ, "%c%d%c%d,%c%d%c%d%s\n", m[0], m[1] - '0', // convert to two moves
+                                               m[5], m[6] - '0',
+                                               m[5], m[6] - '0',
+                                               m[2], m[3] - '0', c);
+          SendToProgram(buf, cps);
+        }
+      } else if(BOARD_HEIGHT > 10) { // [HGM] big: convert ranks to double-digit where needed
+        if(moveList[moveNum][1] == '@' && (BOARD_HEIGHT < 16 || moveList[moveNum][0] <= 'Z')) { // drop move
+          if(moveList[moveNum][0]== '@') snprintf(buf, MSG_SIZ, "@@@@\n"); else
+          snprintf(buf, MSG_SIZ, "%c@%c%d%s", moveList[moveNum][0],
+                                              moveList[moveNum][2], moveList[moveNum][3] - '0', moveList[moveNum]+4);
+        } else
+          snprintf(buf, MSG_SIZ, "%c%d%c%d%s", moveList[moveNum][0], moveList[moveNum][1] - '0',
+                                               moveList[moveNum][2], moveList[moveNum][3] - '0', moveList[moveNum]+4);
+        SendToProgram(buf, cps);
       }
-      else SendToProgram(moveList[moveNum], cps);
+      else {
+        SendToProgram(moveList[moveNum], cps);
+      }
       /* End of additions by Tord */
     }
 
@@ -9454,13 +9466,15 @@ FakeBookMove: // [HGM] book: we jump here to simulate machine moves after book h
 		    CopyBoard(boards[forwardMostMove+1], boards[forwardMostMove]);
 		    SendBoard(cps, forwardMostMove+1); // kludgeless board
 		}
-          } else SendBoard(cps, forwardMostMove); // FEN case, also sets stm properly
-	    if(gameMode == MachinePlaysWhite || gameMode == MachinePlaysBlack ||
-		 gameMode == TwoMachinesPlay)
-              SendToProgram("go\n", cps);
-	    return;
+          } else {
+            SendBoard(cps, forwardMostMove); // FEN case, also sets stm properly
+          }
+          if(gameMode == MachinePlaysWhite || gameMode == MachinePlaysBlack ||
+               gameMode == TwoMachinesPlay)
+            SendToProgram("go\n", cps);
+          return;
       } else
-	if (gameMode == PlayFromGameFile) {
+        if (gameMode == PlayFromGameFile) {
 	    /* Stop reading this game file */
 	    gameMode = EditGame;
 	    ModeHighlight();
@@ -10239,7 +10253,7 @@ ParseGameHistory (char *game)
 void
 ApplyMove (int fromX, int fromY, int toX, int toY, int promoChar, Board board)
 {
-  ChessSquare captured = board[toY][toX], piece, pawn, king, killed, killed2; int p, rookX, oldEP, epRank, berolina = 0;
+  ChessSquare captured = board[toY][toX], piece, pawn, king, killed; int p, rookX, oldEP, epRank, berolina = 0;
   int promoRank = gameInfo.variant == VariantMakruk || gameInfo.variant == VariantGrand || gameInfo.variant == VariantChuChess ? 3 : 1;
 
     /* [HGM] compute & store e.p. status and castling rights for new position */
@@ -10267,7 +10281,7 @@ ApplyMove (int fromX, int fromY, int toX, int toY, int promoChar, Board board)
            board[killY][killX] = EmptySquare,
            board[EP_STATUS] = EP_CAPTURE;
            if( kill2X >= 0 && kill2Y >= 0)
-             killed2 = board[kill2Y][kill2X], board[kill2Y][kill2X] = EmptySquare;
+             board[kill2Y][kill2X] = EmptySquare;
       }
 
       if( board[toY][toX] != EmptySquare ) {
@@ -11032,12 +11046,18 @@ TwoMachinesEventIfReady P((void))
 {
   static int curMess = 0;
   if (first.lastPing != first.lastPong) {
-    if(curMess != 1) DisplayMessage("", _("Waiting for first chess program")); curMess = 1;
+    if(curMess != 1) {
+      DisplayMessage("", _("Waiting for first chess program"));
+    }
+    curMess = 1;
     ScheduleDelayedEvent(TwoMachinesEventIfReady, 10); // [HGM] fast: lowered from 1000
     return;
   }
   if (second.lastPing != second.lastPong) {
-    if(curMess != 2) DisplayMessage("", _("Waiting for second chess program")); curMess = 2;
+    if(curMess != 2) {
+      DisplayMessage("", _("Waiting for second chess program"));
+    }
+    curMess = 2;
     ScheduleDelayedEvent(TwoMachinesEventIfReady, 10); // [HGM] fast: lowered from 1000
     return;
   }
@@ -13686,9 +13706,13 @@ LoadPosition (FILE *f, int positionNumber, char *title)
 	SendBoard(&first, forwardMostMove);
     }
     if (appData.debugMode) {
-int i, j;
-  for(i=0;i<2;i++){for(j=0;j<6;j++)fprintf(debugFP, " %d", boards[i][CASTLING][j]);fprintf(debugFP,"\n");}
-  for(j=0;j<6;j++)fprintf(debugFP, " %d", initialRights[j]);fprintf(debugFP,"\n");
+        int i, j;
+        for(i=0;i<2;i++) {
+            for(j=0;j<6;j++) fprintf(debugFP, " %d", boards[i][CASTLING][j]);
+            fprintf(debugFP,"\n");
+        }
+        for(j=0;j<6;j++) fprintf(debugFP, " %d", initialRights[j]);
+        fprintf(debugFP,"\n");
         fprintf(debugFP, "Load Position\n");
     }
 
