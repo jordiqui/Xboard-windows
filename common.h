@@ -911,7 +911,7 @@ void DisplayError P((String message, int error));
 
 // [HGM] generally useful macros; there are way too many memory leaks...
 #define FREE(x) if(x) free(x)
-#define ASSIGN(x, y) if(x) free(x); x = strdup(y)
+#define ASSIGN(x, y) do { if(x) free(x); x = strdup(y); } while(0)
 
 // [HGM] for now we use the kludge to redefine all the unstructured options by their array counterpart
 //       in due time we would have to make the actual substitutions all through the source
