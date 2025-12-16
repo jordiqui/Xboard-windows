@@ -138,6 +138,10 @@ extern int gettimeofday(struct timeval *, struct timezone *);
 #if HAVE_UNISTD_H
 # include <unistd.h>
 #endif
+#ifdef WIN32
+# include <io.h>
+# include <process.h>
+#endif
 
 #include "common.h"
 #include "frontend.h"
@@ -13805,7 +13809,11 @@ BroadcastPgnToUrl ()
              header, appData.broadcastUrl);
 
 #ifdef WIN32
+# ifdef __MINGW32__
+    curlPipe = popen(command, "w");
+# else
     curlPipe = _popen(command, "w");
+# endif
 #else
     curlPipe = popen(command, "w");
 #endif
@@ -13816,7 +13824,11 @@ BroadcastPgnToUrl ()
     SaveGamePGN2(curlPipe);
     fflush(curlPipe);
 #ifdef WIN32
+# ifdef __MINGW32__
+    status = pclose(curlPipe);
+# else
     status = _pclose(curlPipe);
+# endif
 #else
     status = pclose(curlPipe);
 #endif
@@ -16557,7 +16569,7 @@ PrintOpponents (FILE *fp)
 
 /* Find last component of program's own name, using some heuristics */
 void
-TidyProgramName (char *prog, char *host, char buf[MSG_SIZ])
+TidyProgramName (char *prog, char *host, char *buf)
 {
     char *p, *q, c;
     int local = (strcmp(host, "localhost") == 0);
